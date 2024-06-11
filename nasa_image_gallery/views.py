@@ -37,8 +37,10 @@ def search(request):
         filtro = services_nasa_image_gallery.getImagesBySearchInputLike(search_msg)
         return render(request, 'home.html', {'images': filtro})
     # si el usuario no ingresó texto alguno, debe refrescar la página; caso contrario, debe filtrar aquellas imágenes que posean el texto de búsqueda.
-
-
+def login_page(request):
+    return render(request, 'login.html')
+def exit_page(request):
+    return render(request, 'index.html')
 
 # las siguientes funciones se utilizan para implementar la sección de favoritos: traer los favoritos de un usuario, guardarlos, eliminarlos y desloguearse de la app.
 @login_required
@@ -59,4 +61,4 @@ def deleteFavourite(request):
 
 @login_required
 def exit(request):
-    pass
+    return home(request)
