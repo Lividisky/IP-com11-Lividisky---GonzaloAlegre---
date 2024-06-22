@@ -29,7 +29,7 @@
                         <td>{{ favorito.description }}</td>
                         <td>{{ favorito.date }}</td>
                         <td>
-                            <form method="post" action="{% url 'borrar-favorito' %}">
+                            <form method="post" action="{% url 'borrar-favorito' image_url=favorito.image_url %}">
                                 {% csrf_token %}
                                 <input type="hidden" name="id" value="{{ favorito.id }}">
                                 <button type="submit" class="btn" style="color:red"><i class="material-icons">&#xE872;</i></button>
