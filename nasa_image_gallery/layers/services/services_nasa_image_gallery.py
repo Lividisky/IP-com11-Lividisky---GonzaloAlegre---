@@ -25,7 +25,7 @@ def getImagesBySearchInputLike(input):
 
 
 # añadir favoritos (usado desde el template 'home.html')
-def saveFavourite(request): #Transforma al requeste del template en una nasa card.
+def saveFavourite(request): #Transforma al request del template en una nasa card.
     title = request.POST.get('title')
     description = request.POST.get('description')
     image_url = request.POST.get('image_url')

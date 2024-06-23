@@ -6,8 +6,8 @@ from .layers.services import services_nasa_image_gallery
 from django.contrib.auth.decorators import login_required
 from .models import Favourite
 from  nasa_image_gallery.layers.generic import mapper
-from nasa_image_gallery.layers.dao.repositories import getAllFavouritesByUser
-
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage #Importamos para paginación.
+from django.http import Http404 
 # función que invoca al template del índice de la aplicación.
 def index_page(request):
     return render(request, 'index.html')
@@ -24,29 +24,50 @@ def getAllImagesAndFavouriteList(request):
 def home(request):
     # llama a la función auxiliar getAllImagesAndFavouriteList() y obtiene 2 listados: uno de las imágenes de la API y otro de favoritos por usuario*.
     # (*) este último, solo si se desarrolló el opcional de favoritos; caso contrario, será un listado vacío [].
+    per_page = request.GET.get('per_page', 5)  # Valor por defecto: 5 elementos por página
+    try:
+        per_page = int(per_page) # Convertir per_page a un entero para asegurar que sea un número válido
+    except ValueError:
+        per_page = 5
     images, favourite_list = getAllImagesAndFavouriteList(request)
-    
-    return render(request, 'home.html', {'images': images, 'favourite_list': favourite_list}) 
+    pagina= request.GET.get('page', 1) #Obtiene el número de la página o asigna el 1 si no tiene.
+    try:
+        paginator=Paginator(images, per_page) #Dice cuantas imagenes mostrar por página.
+        images= paginator.page(pagina)
+    except:
+        raise Http404    #En caso de no encontrar página, da error.
+    return render(request, 'home.html', {'images': images, 'favourite_list': favourite_list, 'paginator': paginator, 'per_page':per_page}) 
     
 
 # función utilizada en el buscador.
 def search(request):
-    #images, favourite_list = getAllImagesAndFavouriteList(request)
-    images = getAllImagesAndFavouriteList(request)
-    search_msg = request.POST.get('query', '')
-    if search_msg == "":
-        return render(request, 'home.html', {'images': images})
-    else:
-        filtro = services_nasa_image_gallery.getImagesBySearchInputLike(search_msg)
-        return render(request, 'home.html', {'images': filtro})
-    # si el usuario no ingresó texto alguno, debe refrescar la página; caso contrario, debe filtrar aquellas imágenes que posean el texto de búsqueda.
+    search_msg = request.GET.get('query', '')
+
+    if not search_msg:
+        return redirect("home")
+
+    filtro = services_nasa_image_gallery.getImagesBySearchInputLike(search_msg)
+    paginator = Paginator(filtro, 5)
+    page_number = request.GET.get('page')
+
+    try:
+        filtro = paginator.page(page_number)
+    except PageNotAnInteger:
+        filtro = paginator.page(1)
+    except EmptyPage:
+        filtro = paginator.page(paginator.num_pages)
+
+    favourite_list = services_nasa_image_gallery.getAllFavouritesByUser(request.user)
+    return render(request, 'home.html', {'images': filtro, 'favourite_list': favourite_list, 'paginator': paginator})
+ # si el usuario no ingresó texto alguno, debe refrescar la página; caso contrario, debe filtrar aquellas imágenes que posean el texto de búsqueda.
 
 
-# las siguientes funciones se utilizan para implementar la sección de favoritos: traer los favoritos de un usuario, guardarlos, eliminarlos y desloguearse de la app.
+
+# las siguientes funciones se utilizan para implementar la sección de favoritos: traer los favoritos de un usuario, guardarlos y eliminarlos.
 @login_required
 def getAllFavouritesByUser(request):
     favourite_list = services_nasa_image_gallery.repositories.getAllFavouritesByUser(request.user)
-    return render(request, 'favourites.html', {'favourite_list': favourite_list})
+    return render(request, 'favourites.html', {'favourite_list': favourite_list}) #Trae los favoritos del usuario y los renderiza a favoritos.html
 
     
 
@@ -59,10 +80,10 @@ def saveFavourite(request, image_url):
     if Favourite.objects.filter(image_url=image_url, user=request.user).exists(): #Verifica si el favorito ya existe
         print(f"El favorito para la imagen {image_url} ya existe.")
         return redirect(request.META.get('HTTP_REFERER')) #Si ya existe vuelve a la página anterior.
-    else:
+    else: #Si no existe. 
         image_data = {
         'title': fav.title,
-        'description': fav.description,
+        'description': fav.description, #Prepara los datos.
         'image_url': fav.image_url,
         'date': fav.date,
         'user': fav_user  # Asegúrate de pasar el objeto de usuario, no solo el ID
@@ -84,6 +105,3 @@ def deleteFavourite(request, image_url):
     favorito.delete()  #elimina la imágen.
     return redirect(request.META.get('HTTP_REFERER')) #Redireccion a la misma página donde se añadió la imágen. 
 
-@login_required
-def exit(request):
-    return redirect('exit')

@@ -3,13 +3,23 @@
     <h1 class="text-center">Galería de Imágenes de la NASA</h1>
     <div class="d-flex justify-content-center" style="margin-bottom: 1%">
         <!-- Buscador del sitio -->
-        <form class="d-flex" action="{% url 'buscar' %}" method="POST">
+        <form class="d-flex" action="{% url 'buscar' %}" method="GET">
             {% csrf_token %}
             <input class="form-control me-2" type="search" name="query" placeholder="Escribí una palabra" aria-label="Search">
             <button class="btn btn-outline-success" type="submit">Buscar</button>
         </form>
     </div>
-
+    <form method="get" action="{% url 'home' %}">
+        <label for="id_per_page">Imágenes por página:</label>
+        <select name="per_page" id="id_per_page">
+            <option value="5" {% if per_page == 5 %}selected{% endif %}>5</option>
+            <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+            <option value="15" {% if per_page == 15 %}selected{% endif %}>15</option>
+            <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+            <option value="30" {% if per_page == 30 %}selected{% endif %}>30</option>
+        </select>
+        <button type="submit">Actualizar</button>
+    </form>
 
     <div class="row row-cols-1 row-cols-md-3 g-4">
         {% for imagen in images %}
@@ -36,6 +46,8 @@
             </div>
         </div>
         {% endfor %}
-    </div>
+        <div style="margin-left: 460px;"> 
+         {% include 'paginacion.html' %}
+        </div>
 </main>
 {% endblock %}

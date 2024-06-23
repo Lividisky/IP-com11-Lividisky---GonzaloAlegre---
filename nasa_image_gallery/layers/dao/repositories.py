@@ -10,7 +10,7 @@ def saveFavourite(image):
             image_url=image['image_url'],
             date=image['date'],
             user=image['user']
-        )
+        ) #Crea el favorito a partir de la clase "Favourite"
         
         return fav
     except Exception as e:
