@@ -37,28 +37,31 @@ def home(request):
     except:
         raise Http404    #En caso de no encontrar página, da error.
     return render(request, 'home.html', {'images': images, 'favourite_list': favourite_list, 'paginator': paginator, 'per_page':per_page}) 
+     
     
 
 # función utilizada en el buscador.
 def search(request):
     search_msg = request.GET.get('query', '')
+    per_page = request.GET.get('per_page', 5)
 
     if not search_msg:
         return redirect("home")
+    else:
+        filtro = services_nasa_image_gallery.getImagesBySearchInputLike(search_msg)
+        paginator = Paginator(filtro, per_page)
+        page_number = request.GET.get('page')
 
-    filtro = services_nasa_image_gallery.getImagesBySearchInputLike(search_msg)
-    paginator = Paginator(filtro, 5)
-    page_number = request.GET.get('page')
+        try:
+            filtro = paginator.page(page_number)
+        except PageNotAnInteger:
+            filtro = paginator.page(1)
+        except EmptyPage:
+            filtro = paginator.page(paginator.num_pages)
 
-    try:
-        filtro = paginator.page(page_number)
-    except PageNotAnInteger:
-        filtro = paginator.page(1)
-    except EmptyPage:
-        filtro = paginator.page(paginator.num_pages)
-
-    favourite_list = services_nasa_image_gallery.getAllFavouritesByUser(request.user)
-    return render(request, 'home.html', {'images': filtro, 'favourite_list': favourite_list, 'paginator': paginator})
+        favourite_list = services_nasa_image_gallery.getAllFavouritesByUser(request.user)
+        is_search_page=True
+    return render(request, 'home.html', {'images': filtro, 'favourite_list': favourite_list, 'paginator': paginator, 'per_page':per_page, 'query':search_msg, 'is_search_page':is_search_page})
  # si el usuario no ingresó texto alguno, debe refrescar la página; caso contrario, debe filtrar aquellas imágenes que posean el texto de búsqueda.
 
 
@@ -105,3 +108,5 @@ def deleteFavourite(request, image_url):
     favorito.delete()  #elimina la imágen.
     return redirect(request.META.get('HTTP_REFERER')) #Redireccion a la misma página donde se añadió la imágen. 
 
+
+    

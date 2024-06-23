@@ -1,4 +1,5 @@
-{% extends 'header.html' %} {% block content %}
+{% extends 'header.html' %}
+{% block content %}
 <main>
     <h1 class="text-center">Galería de Imágenes de la NASA</h1>
     <div class="d-flex justify-content-center" style="margin-bottom: 1%">
@@ -9,7 +10,9 @@
             <button class="btn btn-outline-success" type="submit">Buscar</button>
         </form>
     </div>
-    <form method="get" action="{% url 'home' %}">
+
+    <!-- Formulario para seleccionar imágenes por página en la página de búsqueda y en home -->
+    <form method="get" action="{% if is_search_page %}{% url 'buscar' %}{% else %}{% url 'home' %}{% endif %}">
         <label for="id_per_page">Imágenes por página:</label>
         <select name="per_page" id="id_per_page">
             <option value="5" {% if per_page == 5 %}selected{% endif %}>5</option>
@@ -18,6 +21,10 @@
             <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
             <option value="30" {% if per_page == 30 %}selected{% endif %}>30</option>
         </select>
+        <!-- Si estás en la página de búsqueda, incluye el campo oculto 'query' -->
+        {% if is_search_page %}
+        <input type="hidden" name="query" value="{{ request.GET.query }}">
+        {% endif %}
         <button type="submit">Actualizar</button>
     </form>
 
@@ -25,10 +32,10 @@
         {% for imagen in images %}
         <div class="col">
             <div class="card">
-                <img src="{{ imagen.image_url}}" class="card-img-top" alt="imagen">
+                <img src="{{ imagen.image_url }}" class="card-img-top" alt="imagen">
                 <div class="card-body">
-                    <h5 class="card-title">{{ imagen.title}}</h5>
-                    <p class="card-text">{{ imagen.description}}</p>
+                    <h5 class="card-title">{{ imagen.title }}</h5>
+                    <p class="card-text">{{ imagen.description }}</p>
                 </div>
                 {% if request.user.is_authenticated %}
                 <div class="card-footer text-center">
@@ -36,18 +43,22 @@
                         {% csrf_token %}
                         <input type="hidden" name="title" value="{{ imagen.title }}">
                         <input type="hidden" name="description" value="{{ imagen.description }}">
-                        <input type="hidden" name="date" value="{{ imagen.date }}"> {% if imagen.image_url in favourite_list %}
-                        <button type="submit" class="btn btn-primary btn-sm float-left" style="color:white" disabled>✔️ Ya está añadida a favoritos</button> {% else %}
-                        <button type="submit" class="btn btn-primary btn-sm float-left" style="color:white">❤️ Añadir a favoritos</button> {% endif %}
-
+                        <input type="hidden" name="date" value="{{ imagen.date }}">
+                        {% if imagen.image_url in favourite_list %}
+                        <button type="submit" class="btn btn-primary btn-sm float-left" style="color:white" disabled>✔️ Ya está añadida a favoritos</button>
+                        {% else %}
+                        <button type="submit" class="btn btn-primary btn-sm float-left" style="color:white">❤️ Añadir a favoritos</button>
+                        {% endif %}
                     </form>
                 </div>
                 {% endif %}
             </div>
         </div>
         {% endfor %}
-        <div style="margin-left: 460px;"> 
-         {% include 'paginacion.html' %}
-        </div>
+    </div>
+
+    <div style="margin-left: 460px;">
+        {% include 'paginacion.html' %}
+    </div>
 </main>
 {% endblock %}
