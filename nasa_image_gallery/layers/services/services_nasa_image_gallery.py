@@ -4,8 +4,9 @@ from ..transport import transport
 from ..dao import repositories
 from ..generic import mapper
 from django.contrib.auth import get_user
+from django.contrib.auth.models import User
 from nasa_image_gallery.models import Favourite
-
+from django.contrib.auth.decorators import login_required
 def getAllImages(input=None):
     # obtiene un listado de imágenes desde transport.py y lo guarda en un json_collection.
     # ¡OJO! el parámetro 'input' indica si se debe buscar por un valor introducido en el buscador.
@@ -25,6 +26,7 @@ def getImagesBySearchInputLike(input):
 
 
 # añadir favoritos (usado desde el template 'home.html')
+@login_required
 def saveFavourite(request): #Transforma al request del template en una nasa card.
     title = request.POST.get('title')
     description = request.POST.get('description')
@@ -40,14 +42,16 @@ def saveFavourite(request): #Transforma al request del template en una nasa card
         )
 
     return repositories.saveFavourite(fav) #Lo guarda como favorito.
- 
+
 def getAllFavouritesByUser(user):
+        if not isinstance(user, User) or not user.is_authenticated:
+            return[]
         favourite_list = Favourite.objects.filter(user=user).values_list('image_url', flat=True) #Devuelve una lista de urls.
-        return list(favourite_list)
+        return list(favourite_list) 
         
         
 
-
+@login_required
 def deleteFavourite(request):
     favId = request.POST.get('id')
     return repositories.deleteFavourite(favId) # borramos un favorito por su ID.

@@ -1,6 +1,6 @@
 # capa de vista/presentación
 # si se necesita algún dato (lista, valor, etc), esta capa SIEMPRE se comunica con services_nasa_image_gallery.py
-
+from django.contrib.auth.models import User
 from django.shortcuts import redirect, render, get_object_or_404
 from .layers.services import services_nasa_image_gallery
 from django.contrib.auth.decorators import login_required
@@ -15,9 +15,9 @@ def index_page(request):
 # auxiliar: retorna 2 listados -> uno de las imágenes de la API y otro de los favoritos del usuario.
 def getAllImagesAndFavouriteList(request):
     images = services_nasa_image_gallery.getAllImages()
-    favourite_list = services_nasa_image_gallery.getAllFavouritesByUser(request.user) #devuelve la lista de url de los favoritos.
-
-
+    favourite_list=[]
+    if isinstance(request.user, User) and request.user.is_authenticated:
+           favourite_list = services_nasa_image_gallery.getAllFavouritesByUser(request.user) #devuelve la lista de url de los favoritos.
     return images, favourite_list
 
 # función principal de la galería.
@@ -29,6 +29,7 @@ def home(request):
         per_page = int(per_page) # Convertir per_page a un entero para asegurar que sea un número válido
     except ValueError:
         per_page = 5
+
     images, favourite_list = getAllImagesAndFavouriteList(request)
     pagina= request.GET.get('page', 1) #Obtiene el número de la página o asigna el 1 si no tiene.
     try:
@@ -59,7 +60,10 @@ def search(request):
         except EmptyPage:
             filtro = paginator.page(paginator.num_pages)
 
-        favourite_list = services_nasa_image_gallery.getAllFavouritesByUser(request.user)
+        if request.user.is_authenticated:    
+            favourite_list = services_nasa_image_gallery.getAllFavouritesByUser(request.user)
+        else:
+            favourite_list=[]
         is_search_page=True
     return render(request, 'home.html', {'images': filtro, 'favourite_list': favourite_list, 'paginator': paginator, 'per_page':per_page, 'query':search_msg, 'is_search_page':is_search_page})
  # si el usuario no ingresó texto alguno, debe refrescar la página; caso contrario, debe filtrar aquellas imágenes que posean el texto de búsqueda.
@@ -67,7 +71,7 @@ def search(request):
 
 
 # las siguientes funciones se utilizan para implementar la sección de favoritos: traer los favoritos de un usuario, guardarlos y eliminarlos.
-@login_required
+
 def getAllFavouritesByUser(request):
     favourite_list = services_nasa_image_gallery.repositories.getAllFavouritesByUser(request.user)
     return render(request, 'favourites.html', {'favourite_list': favourite_list}) #Trae los favoritos del usuario y los renderiza a favoritos.html
@@ -75,7 +79,7 @@ def getAllFavouritesByUser(request):
     
 
 
-@login_required
+login_required
 def saveFavourite(request, image_url):
     fav= mapper.fromTemplateIntoNASACard(request) #Transforma al request en NasaCard.
     fav.image_url= image_url
