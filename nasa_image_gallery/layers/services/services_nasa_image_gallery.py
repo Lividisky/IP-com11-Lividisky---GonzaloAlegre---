@@ -25,23 +25,6 @@ def getImagesBySearchInputLike(input):
     return getAllImages(input)
 
 
-# añadir favoritos (usado desde el template 'home.html')
-@login_required
-def saveFavourite(request): #Transforma al request del template en una nasa card.
-    title = request.POST.get('title')
-    description = request.POST.get('description')
-    image_url = request.POST.get('image_url')
-    date = request.POST.get('date')
-
-    fav =  Favourite(
-        title=title,
-        description=description,
-        image_url=image_url,
-        date=date,
-        user=request.user
-        )
-
-    return repositories.saveFavourite(fav) #Lo guarda como favorito.
 
 def getAllFavouritesByUser(user):
         if not isinstance(user, User) or not user.is_authenticated:
@@ -51,7 +34,3 @@ def getAllFavouritesByUser(user):
         
         
 
-@login_required
-def deleteFavourite(request):
-    favId = request.POST.get('id')
-    return repositories.deleteFavourite(favId) # borramos un favorito por su ID.

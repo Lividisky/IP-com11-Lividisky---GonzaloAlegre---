@@ -25,15 +25,3 @@ def getAllFavouritesByUser(user):
     
     favouriteList = Favourite.objects.filter(user=user).values('id', 'title', 'description', 'image_url', 'date')
     return list(favouriteList)
-@login_required
-def deleteFavourite(id):
-    try:
-        favourite = Favourite.objects.get(id=id)
-        favourite.delete()
-        return True
-    except Favourite.DoesNotExist:
-        print(f"El favorito con ID {id} no existe.")
-        return False
-    except Exception as e:
-        print(f"Error al eliminar el favorito: {e}")
-        return False
